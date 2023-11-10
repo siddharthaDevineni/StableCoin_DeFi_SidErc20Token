@@ -38,7 +38,7 @@ contract SID is ERC20 {
         address to,
         uint256 value
     ) internal virtual override {
-        uint256 fee = value / 10;
+        uint256 fee = value / 100;
 
         // Transfers the remaing amount (after deducting the fee) to the recipient's account
         super._update(from, to, value - fee);
@@ -52,6 +52,6 @@ contract SID is ERC20 {
      * @param value, amount to deposit
      */
     function deposit(uint256 value) external payable virtual {
-        _mint(msg.sender, value * 10 ** uint(decimals()));
+        _mint(msg.sender, value);
     }
 }
