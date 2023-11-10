@@ -22,7 +22,7 @@ contract SID is ERC20 {
      * @return balance of the contract
      */
     function contractBalance() public view returns (uint256 balance) {
-        return address(this).balance;
+        return balanceOf(address(this));
     }
 
     /**
