@@ -8,10 +8,13 @@ describe("SID", function () {
     const SID = await ethers.getContractFactory("SID");
     const sidToken = await SID.deploy();
 
-    const aliceBalance = await sidToken.balanceOf(alice.address);
-    const bobBalance = await sidToken.balanceOf(bob.address);
-
-    expect(aliceBalance).to.equals(ethers.parseUnits("90", 18));
-    expect(bobBalance).to.equals(ethers.parseUnits("9", 18));
+    await expect(
+      await sidToken.transfer(bob, ethers.parseUnits("10", 18))
+    ).to.changeTokenBalances(
+      sidToken,
+      [alice, bob],
+      // differences in the balances between before and after transfer
+      [ethers.parseUnits("-10", 18), ethers.parseUnits("10", 18)]
+    );
   });
 });
