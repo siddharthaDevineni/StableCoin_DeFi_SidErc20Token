@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers, network } from "hardhat";
 
 describe("SID", function () {
-  it("transfers tokens correctly", async function () {
+  it("should transfer tokens correctly", async function () {
     const [alice, bob] = await ethers.getSigners();
 
     const SID = await ethers.getContractFactory("SID");
@@ -38,5 +38,15 @@ describe("SID", function () {
       // differences in the balances between before and after transfer
       [ethers.parseUnits("45", 17), ethers.parseUnits("-5", 18)]
     );
+  });
+
+  it("should revert on insufficient balance", async () => {
+    const [alice, bob] = await ethers.getSigners();
+
+    const SID = await ethers.getContractFactory("SID");
+    const sidToken = await SID.deploy();
+
+    await expect(sidToken.transfer(bob, ethers.parseUnits("200", 18))).to.be
+      .reverted;
   });
 });
