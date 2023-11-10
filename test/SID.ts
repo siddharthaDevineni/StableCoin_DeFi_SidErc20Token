@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect, should } from "chai";
 import { ethers, network } from "hardhat";
 
 describe("SID", function () {
@@ -8,26 +8,39 @@ describe("SID", function () {
     const SID = await ethers.getContractFactory("SID");
     const sidToken = await SID.deploy();
 
+    console.log(
+      "Balance of Alice after minting 100 tokens to her: ",
+      ethers.formatEther(await sidToken.balanceOf(alice))
+    );
+    console.log(
+      "Balance of Bob before the transfer: ",
+      ethers.formatEther(await sidToken.balanceOf(bob))
+    );
+    console.log(
+      "Balance of token contract before transfer: ",
+      ethers.formatEther(await sidToken.contractBalance())
+    );
+
     await expect(
       await sidToken.transfer(bob, ethers.parseUnits("10", 18))
     ).to.changeTokenBalances(
       sidToken,
       [alice, bob],
       // differences in the balances between before and after transfer
-      [ethers.parseUnits("-10", 18), ethers.parseUnits("9", 18)]
+      [ethers.parseUnits("-10", 18), ethers.parseUnits("99", 17)]
     );
 
     console.log(
-      "Current balance of Alice: ",
-      (await sidToken.balanceOf(alice)).toString()
+      "Balance of Alice after she transfers 10 tokens to Bob: ",
+      ethers.formatEther(await sidToken.balanceOf(alice))
     );
     console.log(
-      "Current balance of Bob  : ",
-      (await sidToken.balanceOf(bob)).toString()
+      "Balance of Bob after he receives the tokens: ",
+      ethers.formatEther(await sidToken.balanceOf(bob))
     );
     console.log(
-      "Current balance of token contract  : ",
-      (await sidToken.contractBalance()).toString()
+      "Balance of token contract after transfer: ",
+      ethers.formatEther(await sidToken.contractBalance())
     );
 
     await expect(
@@ -36,7 +49,20 @@ describe("SID", function () {
       sidToken,
       [alice, bob],
       // differences in the balances between before and after transfer
-      [ethers.parseUnits("45", 17), ethers.parseUnits("-5", 18)]
+      [ethers.parseUnits("4.95", 18), ethers.parseUnits("-5", 18)]
+    );
+
+    console.log(
+      "Balance of Alice after Bob transfers 5 tokens to her: ",
+      ethers.formatEther(await sidToken.balanceOf(alice))
+    );
+    console.log(
+      "Balance of Bob after he transferred those 5 tokens: ",
+      ethers.formatEther(await sidToken.balanceOf(bob))
+    );
+    console.log(
+      "Balance of token contract after transfer: ",
+      ethers.formatEther(await sidToken.contractBalance())
     );
   });
 
@@ -48,5 +74,26 @@ describe("SID", function () {
 
     await expect(sidToken.transfer(bob, ethers.parseUnits("200", 18))).to.be
       .reverted;
+  });
+
+  it("should deposit to the caller's account", async () => {
+    const [alice, bob] = await ethers.getSigners();
+
+    const SID = await ethers.getContractFactory("SID");
+    const sidToken = await SID.deploy();
+
+    console.log(
+      "Balance of Alice before her deposit: ",
+      ethers.formatEther(await sidToken.balanceOf(alice))
+    );
+
+    await expect(
+      await sidToken.deposit(ethers.parseUnits("50", 18))
+    ).to.changeTokenBalance(sidToken, alice, ethers.parseUnits("49.5", 18));
+
+    console.log(
+      "Balance of Alice after deposit: ",
+      ethers.formatEther(await sidToken.balanceOf(alice))
+    );
   });
 });
