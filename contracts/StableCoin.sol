@@ -7,10 +7,12 @@ import {Oracle} from "Oracle.sol";
 contract StableCoin is SID {
     DepositorCoin public depositorCoin;
     Oracle public oracle;
+    uint256 public feeRatePercentage;
 
     function mint() external payable {
         uint256 usdInSCPrice = 1; // 1 USD = 1 SC
-        uint256 mintStableCoinAmount = msg.value * oracle.getPrice() * usdInSCPrice;
+        uint256 fee = _getFee(msg.value);
+        uint256 mintStableCoinAmount = ( msg.value - fee )* oracle.getPrice() * usdInSCPrice;
         _mint(msg.sender, mintStableCoinAmount);
     }
 
@@ -18,8 +20,13 @@ contract StableCoin is SID {
         _burn(msg.sender, burnStableCoinAmount);
         uint256 refundingEth = burnStableCoinAmount / oracle.getPrice();
 
-        (bool success, ) = msg.sender.call{value: refundingEth}("");
+        uint256 fee = _getFee(refundingEth);
+        (bool success, ) = msg.sender.call{value: refundingEth - fee}("");
         require(success, "SC: Burn refund transaction failed");
+    }
+
+    function _getFee(uint256 ethAmount) private view returns (uint256) {
+        ethAmount * feeRatePercentage / 100 ;
     }
 
     function depositCollateralBuffer() external payable {
