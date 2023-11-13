@@ -6,7 +6,7 @@ contract DepositorCoin is SID {
     address public owner;
     owner = msg.sender;
     
-    public modifier onlyOwner() {
+    modifier onlyOwner() {
         require(msg.sender == owner, "DC: Only owner can mint/burn");
         _;
     }

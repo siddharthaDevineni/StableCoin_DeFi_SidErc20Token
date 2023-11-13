@@ -24,7 +24,7 @@ contract StableCoin is SID {
 
     function depositCollateralBuffer() external payable {
         uint256 ethUsdPrice = 1000;
-        uint256 surplusInUsd = 500;
+        uint256 surplusInUsd = _getSurplusInContractInUsd();
 
         uint256 usdInDCPrice; = depositorCoin.totalSupply() / surplusInUsd;  // 1 USD = 0.5 DC
         uinr256 mintDepositorCoinAmount = msg.value * ethUsdPrice * usdInDCPrice;
@@ -34,12 +34,20 @@ contract StableCoin is SID {
     function withdrawCollateralBuffer( uint256 burnDepositorCoinAmount ) external () {
         depositorCoin.burn(msg.sender, refundingEth);
         uint256 ethUsdPrice = 1000;
-        uint256 surplusInUsd = 500;
+        uint256 surplusInUsd = _getSurplusInContractInUsd();
         uint256 usdInDCPrice; = depositorCoin.totalSupply() / surplusInUsd;  // 1 USD = 0.5 DC
         uint256 refundingUSD = burnDepositorCoinAmount / usdInDCPrice;
         uint256 refundingEth = refundingUSD / ethUsdPrice;
 
         (bool success, ) = msg.sender.call{value: refundingEth}("");
         require(success, "DC:Withdraw collateral buffer transaction failed");
+    }
+
+    function _getSurplusInContractInUsd() private view returns (uint256) {
+        uint256 ethUsdPrice = 1000;
+        uint256 ethContractBalanceInUsd = (contractBalance() - msg.value) * ethUsdPrice;
+        uint256 totalSCBalanceInUsd =  totalSupply();
+        uint256 surplusInContract = ethContractBalanceInUsd - totalSCBalanceInUsd;
+        return surplusInContract;
     }
 }
