@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.13;
+pragma solidity 0.8.20;
 import {SID} from "./SID.sol";
 
 contract DepositorCoin is SID {
