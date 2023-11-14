@@ -32,7 +32,15 @@ contract StableCoin is SID {
     function depositCollateralBuffer() external payable {
         uint256 surplusInUsd = _getSurplusInContractInUsd();
 
-        uint256 usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd;  // 1 USD = 0.5 DC
+        uint256 usdInDCPrice;
+        if(surplusInUsd == 0)
+        {
+            depositorCoin = new DepositorCoin();
+            usdInDCPrice = 1;
+        }
+        else {
+            usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd;  // 1 USD = 0.5 DC
+        }
         uinr256 mintDepositorCoinAmount = msg.value * oracle.getPrice() * usdInDCPrice;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
@@ -49,7 +57,7 @@ contract StableCoin is SID {
     }
 
     function _getSurplusInContractInUsd() private view returns (uint256) {
-        uint256 ethContractBalanceInUsd = (contractBalance() - msg.value) * oracle.getPrice();
+        uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) * oracle.getPrice();
         uint256 totalSCBalanceInUsd =  totalSupply();
         uint256 surplusInContract = ethContractBalanceInUsd - totalSCBalanceInUsd;
         return surplusInContract;
