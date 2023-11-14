@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 contract Oracle {
     uint256 private price;
-    uint256 public owner;
+    address public owner;
 
     constructor() {
         owner = msg.sender;
