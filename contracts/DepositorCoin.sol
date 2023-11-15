@@ -6,9 +6,15 @@ contract DepositorCoin is SID {
     address public owner;
     uint256 unlockTime;
 
-    constructor(uint256 _lockTime) {
+    constructor(
+        uint256 _lockTime,
+        address _initialOwner,
+        uint256 _initialSupply
+    ) {
         owner = msg.sender;
         unlockTime = block.timestamp + _lockTime;
+
+        _mint(_initialOwner, _initialSupply);
     }
 
     modifier onlyOwner() {

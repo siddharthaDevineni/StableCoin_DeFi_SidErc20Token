@@ -43,17 +43,21 @@ contract StableCoin is SID {
         return (ethAmount * feeRatePercentage) / 100;
     }
 
+    /**
+     * @dev deposit Depositor coins as buffer on top of stable coins in the contract so that stable coin holders are safe
+     * deposits in the case of an already existing buffer or in an under water situation to bring stable coin holders out of risk
+     */
     function depositCollateralBuffer() external payable {
         int256 surplusOrDeficitInUsd = _getSurplusOrDeficitInContractInUsd();
 
-        uint256 usdInDCPrice;
-        uint256 addedSurplusEth;
-
-        if (surplusOrDeficitInUsd <= 0) {
+        if (
+            surplusOrDeficitInUsd <= 0
+        ) // when there is an under water situation
+        {
             uint256 deficitInUsd = uint256(surplusOrDeficitInUsd * -1);
             uint256 deficitInEth = deficitInUsd / oracle.getPrice();
 
-            addedSurplusEth = msg.value - deficitInEth;
+            uint256 addedSurplusEth = msg.value - deficitInEth;
 
             uint256 requiredInitialSurplusInUsd = (initialCollaterRatioPercentage *
                     this.totalSupply()) / 100;
@@ -62,21 +66,35 @@ contract StableCoin is SID {
 
             require(
                 addedSurplusEth >= requiredInitialSurplusInEht,
-                "SC: Inital collateral ratio not matche"
+                "SC: Inital collateral ratio not matched"
             );
-            depositorCoin = new DepositorCoin(depositorCoinLockTime);
-            usdInDCPrice = 1;
-        } else {
-            uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
-            usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd;
-            addedSurplusEth = msg.value;
+
+            uint256 mintInitalDepositorSupply = addedSurplusEth *
+                oracle.getPrice();
+
+            depositorCoin = new DepositorCoin(
+                depositorCoinLockTime,
+                msg.sender,
+                mintInitalDepositorSupply
+            );
+
+            return;
         }
-        uint256 mintDepositorCoinAmount = addedSurplusEth *
+        uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
+
+        // usdInDCPrice = 250e18 / 500e18 = 0.5
+        uint256 usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd;
+
+        uint256 mintDepositorCoinAmount = msg.value *
             oracle.getPrice() *
             usdInDCPrice;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
 
+    /**
+     * @dev withdraw Depositor coins from the buffer
+     * @param burnDepositorCoinAmount: the amount in USD to withdraw equivalent DCs
+     */
     function withdrawCollateralBuffer(
         uint256 burnDepositorCoinAmount
     ) external {
@@ -93,6 +111,10 @@ contract StableCoin is SID {
         require(success, "DC:Withdraw collateral buffer transaction failed");
     }
 
+    /**
+     * @dev calculates either surplus or deficit of SCs in USD to check if it's in under water or surplus situations
+     * @return surplusOrDeficitInUsd: Surplus or deficit amount of SCs
+     */
     function _getSurplusOrDeficitInContractInUsd()
         private
         view
@@ -101,8 +123,8 @@ contract StableCoin is SID {
         uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) *
             oracle.getPrice();
         uint256 totalSCBalanceInUsd = totalSupply();
-        int256 surplusInContract = int256(ethContractBalanceInUsd) -
+        int256 surplusOrDeficitInUsd = int256(ethContractBalanceInUsd) -
             int256(totalSCBalanceInUsd);
-        return surplusInContract;
+        return surplusOrDeficitInUsd;
     }
 }
