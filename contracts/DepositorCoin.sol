@@ -4,9 +4,11 @@ import {SID} from "./SID.sol";
 
 contract DepositorCoin is SID {
     address public owner;
+    uint256 unlockTime;
 
-    constructor() {
+    constructor(uint256 _lockTime) {
         owner = msg.sender;
+        unlockTime = block.timestamp + _lockTime;
     }
 
     modifier onlyOwner() {
@@ -14,11 +16,16 @@ contract DepositorCoin is SID {
         _;
     }
 
-    function mint(address to, uint256 value) external onlyOwner {
+    modifier isUnlocked() {
+        require(block.timestamp >= unlockTime, "DC: Still locked");
+        _;
+    }
+
+    function mint(address to, uint256 value) external onlyOwner isUnlocked {
         _mint(to, value);
     }
 
-    function burn(address from, uint256 value) external onlyOwner {
+    function burn(address from, uint256 value) external onlyOwner isUnlocked {
         _burn(from, value);
     }
 }

@@ -9,6 +9,17 @@ contract StableCoin is SID {
     Oracle public oracle;
     uint256 public feeRatePercentage;
     uint256 initialCollaterRatioPercentage;
+    uint256 depositorCoinLockTime;
+
+    constructor(
+        uint256 _feeRatePercentage,
+        uint256 _initialCollaterRatioPercentage,
+        uint256 _depositorCoinLockTime
+    ) {
+        feeRatePercentage = _feeRatePercentage;
+        initialCollaterRatioPercentage = _initialCollaterRatioPercentage;
+        depositorCoinLockTime = _depositorCoinLockTime;
+    }
 
     function mint() external payable {
         uint256 usdInSCPrice = 1; // 1 USD = 1 SC
@@ -53,7 +64,7 @@ contract StableCoin is SID {
                 addedSurplusEth >= requiredInitialSurplusInEht,
                 "SC: Inital collateral ratio not matche"
             );
-            depositorCoin = new DepositorCoin();
+            depositorCoin = new DepositorCoin(depositorCoinLockTime);
             usdInDCPrice = 1;
         } else {
             uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
