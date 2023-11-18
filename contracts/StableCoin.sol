@@ -12,6 +12,8 @@ contract StableCoin is SID {
     uint256 initialCollaterRatioPercentage;
     uint256 depositorCoinLockTime;
 
+    error InitialCollateralRatioError(string message, uint256 minDepositAmount );
+
     constructor(
         uint256 _feeRatePercentage,
         uint256 _initialCollaterRatioPercentage,
@@ -65,11 +67,11 @@ contract StableCoin is SID {
             uint256 requiredInitialSurplusInEht = requiredInitialSurplusInUsd /
                 oracle.getPrice();
 
-            require(
-                addedSurplusEth >= requiredInitialSurplusInEht,
-                "SC: Inital collateral ratio not matched"
-            );
-
+            if (addedSurplusEth < requiredInitialSurplusInEht) {
+                uint256 minDepositAmount = deficitInEth + requiredInitialSurplusInEht;
+                revert InitialCollateralRatioError("SC: Inital collateral ratio not matched, minimum is ", );
+            }
+                
             uint256 mintInitalDepositorSupply = addedSurplusEth *
                 oracle.getPrice();
 
