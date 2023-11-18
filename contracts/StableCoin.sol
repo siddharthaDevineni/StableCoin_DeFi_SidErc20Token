@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 import {SID} from "./SID.sol";
 import {DepositorCoin} from "./DepositorCoin.sol";
 import {Oracle} from "./Oracle.sol";
+import {UD60x18} from "../lib/prb-math/src/UD60x18.sol";
 
 contract StableCoin is SID {
     DepositorCoin public depositorCoin;
@@ -83,11 +84,11 @@ contract StableCoin is SID {
         uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
 
         // usdInDCPrice = 250e18 / 500e18 = 0.5
-        uint256 usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd;
+        UD60x18 usdInDCPrice = UD60x18.convert(depositorCoin.totalSupply() / surplusInUsd);
 
-        uint256 mintDepositorCoinAmount = msg.value *
+        uint256 mintDepositorCoinAmount = (msg.value *
             oracle.getPrice() *
-            usdInDCPrice;
+            UD60x18.convert(usdInDCPrice);
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
 
@@ -102,8 +103,8 @@ contract StableCoin is SID {
         require(surplusOrDeficitInUsd > 0, "SC: No DC to withdraw");
 
         uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
-        uint256 usdInDCPrice = depositorCoin.totalSupply() / surplusInUsd; // 1 USD = 0.5 DC
-        uint256 refundingUSD = burnDepositorCoinAmount / usdInDCPrice;
+        UD60x18 usdInDCPrice = UD60x18.convert(depositorCoin.totalSupply() / surplusInUsd); // 1 USD = 0.5 DC
+        uint256 refundingUSD = burnDepositorCoinAmount / UD60x18.convert(usdInDCPrice);
         uint256 refundingEth = refundingUSD / oracle.getPrice();
         depositorCoin.burn(msg.sender, refundingEth);
 
