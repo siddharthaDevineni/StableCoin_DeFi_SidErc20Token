@@ -12,7 +12,7 @@ contract StableCoin is SID {
     uint256 initialCollaterRatioPercentage;
     uint256 depositorCoinLockTime;
 
-    error InitialCollateralRatioError(string message, uint256 minDepositAmount );
+    error InitialCollateralRatioError(string message, uint256 minDepositAmount);
 
     constructor(
         uint256 _feeRatePercentage,
@@ -68,10 +68,14 @@ contract StableCoin is SID {
                 oracle.getPrice();
 
             if (addedSurplusEth < requiredInitialSurplusInEht) {
-                uint256 minDepositAmount = deficitInEth + requiredInitialSurplusInEht;
-                revert InitialCollateralRatioError("SC: Inital collateral ratio not matched, minimum is ", );
+                uint256 minDepositAmount = deficitInEth +
+                    requiredInitialSurplusInEht;
+                revert InitialCollateralRatioError(
+                    "SC: Inital collateral ratio not matched, minimum is ",
+                    minDepositAmount
+                );
             }
-                
+
             uint256 mintInitalDepositorSupply = addedSurplusEth *
                 oracle.getPrice();
 
@@ -86,11 +90,13 @@ contract StableCoin is SID {
         uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
 
         // usdInDCPrice = 250e18 / 500e18 = 0.5
-        UD60x18 usdInDCPrice = UD60x18.convert(depositorCoin.totalSupply() / surplusInUsd);
+        UD60x18 usdInDCPrice = UD60x18.wrap(
+            (depositorCoin.totalSupply() * 1e18) / surplusInUsd
+        );
 
         uint256 mintDepositorCoinAmount = (msg.value *
             oracle.getPrice() *
-            UD60x18.convert(usdInDCPrice);
+            UD60x18.unwrap(usdInDCPrice)) / 1e18;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
 
@@ -105,8 +111,12 @@ contract StableCoin is SID {
         require(surplusOrDeficitInUsd > 0, "SC: No DC to withdraw");
 
         uint256 surplusInUsd = uint256(surplusOrDeficitInUsd);
-        UD60x18 usdInDCPrice = UD60x18.convert(depositorCoin.totalSupply() / surplusInUsd); // 1 USD = 0.5 DC
-        uint256 refundingUSD = burnDepositorCoinAmount / UD60x18.convert(usdInDCPrice);
+        UD60x18 usdInDCPrice = UD60x18.wrap(
+            (depositorCoin.totalSupply() * 1e18) / surplusInUsd
+        ); // 1 USD = 0.5 DC
+        uint256 refundingUSD = burnDepositorCoinAmount /
+            UD60x18.unwrap(usdInDCPrice) /
+            1e18;
         uint256 refundingEth = refundingUSD / oracle.getPrice();
         depositorCoin.burn(msg.sender, refundingEth);
 
